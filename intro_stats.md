@@ -8,6 +8,7 @@ Sara Stoudt (@sastoudt)
 Find out more about the tidyverse [here](https://www.tidyverse.org/).
 
 ``` r
+#install.packages("tidyverse")
 library(tidyverse)
 ```
 
@@ -26,12 +27,12 @@ Other ways to [load data](https://readr.tidyverse.org/):
   - [Google
     sheets](https://cran.r-project.org/web/packages/googlesheets/googlesheets.pdf)
   - Fixed width: `read_fwf()`
-  - Delimited files: `read_delim()`
+  - Delimited files:
+    `read_delim()`
 
 ## Look at data
 
 ``` r
-#View(boston) ## this is a comment
 names(boston)
 ```
 
@@ -105,6 +106,10 @@ str(boston)
     ##   ..   minority = col_double(),
     ##   ..   female = col_double()
     ##   .. )
+
+``` r
+#View(boston) ## this is a comment
+```
 
 ## Summaries of Continuous Variables
 
@@ -288,15 +293,50 @@ boston <- boston %>% mutate(minority = case_when(
   race != "W" ~ 1
 ))
 
+boston %>% select(minority) %>% table()
+```
+
+    ## .
+    ##  0  1 
+    ## 91 19
+
+``` r
 ## recode sex --> female
 
 boston <- boston %>% mutate(female = case_when(
   sex == "F" ~ 1,
   sex == "M" ~ 0
 )) ## U will become NA
+
+boston %>% select(female) %>% table()
 ```
 
+    ## .
+    ##  0  1 
+    ## 63 46
+
+``` r
+boston <- boston %>% mutate(mphover = mph - zone)
+
+boston %>% select(mphover) %>% summary()
+```
+
+    ##     mphover     
+    ##  Min.   : 7.00  
+    ##  1st Qu.:13.00  
+    ##  Median :15.00  
+    ##  Mean   :15.17  
+    ##  3rd Qu.:17.00  
+    ##  Max.   :25.00
+
 ## [Plots](https://ggplot2.tidyverse.org/)
+
+``` r
+ggplot(boston, aes(x = mphover)) +
+  geom_histogram(position = "identity")
+```
+
+![](intro_stats_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 ## mph over by ticket
@@ -304,7 +344,7 @@ ggplot(boston, aes(x = mphover, color = ticket, fill = ticket)) +
   geom_histogram(alpha = 0.6, position = "identity")
 ```
 
-![](intro_stats_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](intro_stats_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
 
 ``` r
 ## three variables
@@ -312,12 +352,14 @@ ggplot(boston, aes(x = mphover, color = ticket, fill = ticket)) +
   geom_histogram(alpha = 0.6, position = "identity") + facet_wrap(~female)
 ```
 
-![](intro_stats_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
+![](intro_stats_files/figure-gfm/unnamed-chunk-10-3.png)<!-- -->
 
 ## Statistical Tests
 
 **Is the average miles per hour over the speed limit different for
 ticket and non-tickets?**
+
+*difference in means test*
 
 ``` r
 t.test(mphover ~ ticket, data = boston)
@@ -335,41 +377,67 @@ t.test(mphover ~ ticket, data = boston)
     ## mean in group 0 mean in group 1 
     ##        14.32787        16.22449
 
-[Assumptions](https://en.wikipedia.org/wiki/Student%27s_t-test#Assumptions)
-
-TLDR
+*Assumptions*
 
   - large sample size (at least \>30)
   - independent samples (independence between drivers)
 
-**Is the probability of getting a ticket for a female different than the
-probability of getting a ticket for a non-female?**
+*Null hypothesis:* There is no significant difference in the average
+miles per hour over the speed limit for tickets and non-tickets.
+
+*Alternative hypothesis:* There is a significant difference in the
+average miles per hour over the speed limit for tickets and non-tickets.
+
+*Interpretation:* If the average miles per hour over the speed limit was
+the same for tickets and non-tickets, we would get a difference in means
+equal to or more extreme to the one we see here with probablility 0.0005
+(p-value). This is unlikely, providing evidence for the hypothesis that
+there is a difference.
+
+*Healthy skepticism*: Is the difference practically significant?
+
+**Is the proportion of females getting tickets different than the
+proportion of males getting tickets?**
+
+*difference in proportions test*
 
 ``` r
-prop.test(table(boston$ticket, boston$female), correct=FALSE) 
+prop.test(table(boston$ticket, boston$female)) 
 ```
 
     ## 
-    ##  2-sample test for equality of proportions without continuity
-    ##  correction
+    ##  2-sample test for equality of proportions with continuity correction
     ## 
     ## data:  table(boston$ticket, boston$female)
-    ## X-squared = 3.3275, df = 1, p-value = 0.06813
+    ## X-squared = 2.6543, df = 1, p-value = 0.1033
     ## alternative hypothesis: two.sided
     ## 95 percent confidence interval:
-    ##  -0.355804961  0.008866185
+    ##  -0.3743424  0.0274036
     ## sample estimates:
     ##    prop 1    prop 2 
     ## 0.5000000 0.6734694
 
-Assumptions
+*Assumptions*
 
   - observations are random sample of population
   - independent observations
-  - have at least 10 successes and 10 failures.
+  - have at least 10 successes (ticket) and 10 failures (no ticket)
+
+*Null hypothesis:* There is no significant difference in proportion of
+males and females who got tickets.
+
+*Alternative hypothesis:* There is a significant difference in
+proportion of males and females who got tickets.
+
+*Interpretation:* If the proportion of males and females who got tickets
+were the same, we would get a difference in proportions equal to or more
+extreme to the one we see here with probablility 0.068 (p-value). This
+is bigger than a typical cutoff used (0.05), providing less evidence for
+the hypothesis that there is a difference.
 
 *Healthy skepticism*: What if females were more likely to drive during
-the day and tickets are more likely to be given out at night?
+the day and tickets are more likely to be given out at night? Also what
+is so magical about the 0.05 p-value cut-off?
 
 To deal with this kind of thing stick around for [Linear
 Regression](https://ireapps.github.io/nicar-2020-schedule#20200308_stats_2_linear_regression_repeat_1098_all).
