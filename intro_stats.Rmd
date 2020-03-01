@@ -1,0 +1,160 @@
+---
+title: "Stats 1: An Introduction"
+author: "Sara Stoudt (@sastoudt)"
+date: "3/8/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading packages
+
+Find out more about the tidyverse [here](https://www.tidyverse.org/).
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+## Loading data
+
+Using data from [previous version of this course](https://ireapps.github.io/nicar-2020-schedule#20200306_stats_1_an_introduction_1094_all)
+
+```{r, warning=FALSE, message=FALSE}
+boston <- read_csv("boston.csv")
+```
+
+Other ways to [load data](https://readr.tidyverse.org/):
+
+- [Excel spread sheets](https://readxl.tidyverse.org/)
+- [Google sheets](https://cran.r-project.org/web/packages/googlesheets/googlesheets.pdf)
+- Fixed width: `read_fwf()`
+- Delimited files: `read_delim()`
+
+## Look at data
+
+```{r, warning=FALSE, message=FALSE}
+#View(boston) ## this is a comment
+names(boston)
+dim(boston)
+head(boston)
+str(boston)
+```
+
+## Summaries of Continuous Variables
+
+```{r, warning=FALSE, message=FALSE}
+## continuous
+boston %>% select(mph) %>% summary()
+boston %>% select(mphover) %>% summary()
+```
+
+## Summaries of Discrete Variables
+
+```{r, warning=FALSE, message=FALSE}
+## discrete
+boston %>% select(sex) %>% table()
+boston %>% select(race) %>% table()
+boston %>% select(daynight) %>% table()
+boston %>% select(ticket) %>% table()
+```
+
+## Two-Way Summaries
+
+```{r, warning=FALSE, message=FALSE}
+## two-table
+boston %>% select(sex, race) %>% table()
+boston %>% select(sex, ticket) %>% table()
+boston %>% select(race, ticket) %>% table() 
+```
+
+## Summaries by Group
+
+Find out more about summaries [here](https://dplyr.tidyverse.org/).
+
+```{r, warning=FALSE, message=FALSE}
+boston %>%
+  group_by(sex) %>%
+  summarise(meanSpeeding = mean(mphover))
+boston %>%
+  group_by(daynight) %>%
+  summarise(meanSpeeding = mean(mphover))
+boston %>%
+  group_by(ticket) %>%
+  summarise(meanSpeeding = mean(mphover), minSpeeding = min(mphover), maxSpeeding = max(mphover))
+
+## two way
+boston %>% group_by(ticket, zone) %>% summarise(count = n()) %>% arrange(zone)
+```
+
+## Transforming Variables
+
+**[Factors](https://forcats.tidyverse.org/)**
+
+```{r, warning=FALSE, message=FALSE}
+## make ticket factor
+class(boston$ticket)
+boston$ticket <- as.factor(boston$ticket)
+class(boston$ticket)
+```
+
+```{r}
+## group race --> minority
+
+boston <- boston %>% mutate(minority = case_when(
+  race == "W" ~ 0,
+  race != "W" ~ 1
+))
+
+## recode sex --> female
+
+boston <- boston %>% mutate(female = case_when(
+  sex == "F" ~ 1,
+  sex == "M" ~ 0
+)) ## U will become NA
+
+```
+
+## [Plots](https://ggplot2.tidyverse.org/)
+
+```{r, warning=FALSE, message=FALSE}
+## mph over by ticket
+ggplot(boston, aes(x = mphover, color = ticket, fill = ticket)) +
+  geom_histogram(alpha = 0.6, position = "identity")
+
+## three variables
+ggplot(boston, aes(x = mphover, color = ticket, fill = ticket)) +
+  geom_histogram(alpha = 0.6, position = "identity") + facet_wrap(~female)
+```
+
+## Statistical Tests
+
+**Is the average miles per hour over the speed limit different for ticket and non-tickets?**
+
+```{r}
+t.test(mphover ~ ticket, data = boston)
+```
+
+[Assumptions](https://en.wikipedia.org/wiki/Student%27s_t-test#Assumptions)
+
+TLDR
+
+- large sample size (at least >30)
+- independent samples (independence between drivers)
+
+**Is the probability of getting a ticket for a female different than the probability of getting a ticket for a non-female?**
+
+```{r}
+prop.test(table(boston$ticket, boston$female), correct=FALSE) 
+```
+
+Assumptions
+
+- observations are random sample of population
+- independent observations
+- have at least 10 successes and 10 failures.
+
+*Healthy skepticism*: What if females were more likely to drive during the day and tickets are more likely to be given out at night?
+
+To deal with this kind of thing stick around for [Linear Regression](https://ireapps.github.io/nicar-2020-schedule#20200308_stats_2_linear_regression_repeat_1098_all).
